@@ -1,1 +1,0 @@
-# gym-service-system-app
