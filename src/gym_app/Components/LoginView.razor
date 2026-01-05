@@ -1,0 +1,107 @@
+@using gym_app.Models
+@using gym_app.Services
+@inject GymSystemController Controller
+@inject UserSessionService Session
+
+<div class="d-flex justify-content-center align-items-center" style="min-height: 65vh;">
+    <div class="p-4 border-0" style="width: 100%; max-width: 600px;">
+        <div class="card-body text-center">
+            <h3 class="mb-4 fw-bold">Witaj w gymUJ!</h3>
+            
+            <div class="text-start mb-4">
+                <label class="form-label small text-muted">Twój Nickname</label>
+                <input @bind="userName" @bind:event="oninput" class="form-control form-control-lg" placeholder="np. marek123" />
+            </div>
+
+            <label class="form-label small text-muted d-block text-start mb-2">Kim jesteś:</label>
+            
+            <div class="row g-3 mb-4">
+                <div class="col-6">
+                    <div class="role-card @(selectedRole == UserRole.Client ? "active" : "")" 
+                         @onclick="() => selectedRole = UserRole.Client">
+                        <div class="image-wrapper">
+                            <img src="client.png" alt="Klient" />
+                        </div>
+                        <p class="mt-2 fw-bold mb-0">Klient</p>
+                    </div>
+                </div>
+                
+                <div class="col-6">
+                    <div class="role-card @(selectedRole == UserRole.Employee ? "active" : "")" 
+                         @onclick="() => selectedRole = UserRole.Employee">
+                        <div class="image-wrapper">
+                            <img src="trainer.png" alt="Trener" />
+                        </div>
+                        <p class="mt-2 fw-bold mb-0">Trener</p>
+                    </div>
+                </div>
+            </div>
+            
+            <button class="btn btn-primary btn-lg w-50 mx-auto d-block shadow-sm mt-2" 
+                    @onclick="HandleNext" 
+                    disabled="@(string.IsNullOrWhiteSpace(userName))">
+                Dalej
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+    .role-card {
+        cursor: pointer;
+        border: 2px solid #dee2e6;
+        border-radius: 12px;
+        padding: 15px;
+        transition: all 0.2s ease-in-out;
+        background: white;
+    }
+
+    .role-card:hover {
+        border-color: #adb5bd;
+        transform: translateY(-2px);
+    }
+
+    .role-card.active {
+        border-color: #0d6efd;
+        background-color: rgba(13, 110, 253, 0.05);
+        box-shadow: 0 4px 12px rgba(13, 110, 253, 0.15);
+    }
+    
+    .image-wrapper {
+        width: 100%;
+        aspect-ratio: 1 / 1;
+        overflow: hidden;
+        border-radius: 8px;
+        background: #f8f9fa;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .image-wrapper img {
+        width: 60%;
+        height: auto;
+        object-fit: contain;
+    }
+    
+    .role-card p {
+        color: #495057;
+    }
+    
+    .role-card.active p {
+        color: #0d6efd;
+    }
+</style>
+
+@code {
+    private string userName = "";
+    private UserRole selectedRole = UserRole.Client;
+
+    private void HandleNext()
+    {
+        if (!string.IsNullOrWhiteSpace(userName))
+        {
+            Session.Login(userName, selectedRole);
+        }
+    }
+}

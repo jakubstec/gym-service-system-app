@@ -1,0 +1,229 @@
+@using gym_app.Models
+@using gym_app.Services
+@using System.Globalization
+@inject GymSystemController Controller
+@inject UserSessionService Session
+@implements IDisposable
+
+<div class="container-fluid pb-5 px-4">
+    <div class="row g-4">
+        <div class="col-lg-3">
+            <div class="card border-0 shadow-sm p-4 sticky-top" style="top: 20px; border-radius: 24px; background: #fff;">
+                <h5 class="fw-bold mb-4">@(isEditing ? "Edytuj Zajęcia" : "Nowe Zajęcia")</h5>
+                
+                <div class="mb-2">
+                    <label class="small fw-bold text-muted mb-1 text-uppercase" style="font-size: 0.6rem;">Nazwa zajęć</label>
+                    <input class="form-control form-control-sm rounded-3" @bind="formSession.Name" placeholder="np. Zumba" />
+                </div>
+                <div class="mb-2">
+                    <label class="small fw-bold text-muted mb-1 text-uppercase" style="font-size: 0.6rem;">Prowadzący</label>
+                    <input class="form-control form-control-sm rounded-3" @bind="formSession.InstructorName" />
+                </div>
+                <div class="mb-2">
+                    <label class="small fw-bold text-muted mb-1 text-uppercase" style="font-size: 0.6rem;">Data i godzina startu</label>
+                    <input class="form-control form-control-sm rounded-3" type="datetime-local" @bind="formSession.StartTime" />
+                </div>
+                
+                <div class="mb-3">
+                    <label class="small fw-bold text-muted mb-1 text-uppercase" style="font-size: 0.6rem;">Typ</label>
+                    <select class="form-select form-select-sm rounded-3" @bind="sessionType">
+                        <option value="Group">Grupowe</option>
+                        <option value="Personal">Personalne</option>
+                    </select>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="small fw-bold text-muted mb-1 text-uppercase" style="font-size: 0.6rem;">Czas trwania</label>
+                    <div class="d-flex gap-1">
+                        @foreach (var dur in new[] { 30, 60, 90, 120 })
+                        {
+                            <button class="btn btn-xs flex-grow-1 @(formSession.DurationMinutes == dur ? "btn-dark" : "btn-outline-secondary")"
+                                    @onclick="() => formSession.DurationMinutes = dur" style="font-size: 0.65rem; padding: 2px;">
+                                @dur'
+                            </button>
+                        }
+                    </div>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button class="btn btn-primary btn-sm w-100 rounded-pill fw-bold" @onclick="SaveSession">
+                        @(isEditing ? "Zapisz zmiany" : "Dodaj do grafiku")
+                    </button>
+                    @if(isEditing) {
+                        <button class="btn btn-light btn-sm rounded-pill" @onclick="CancelEdit">✕</button>
+                    }
+                </div>
+                
+                <div class="mt-4 border-top pt-3">
+                    <h6 class="fw-bold small text-muted text-uppercase mb-2" style="font-size: 0.65rem;">Live Feed (Observer)</h6>
+                    <div class="notification-log">
+                        @if (!trainerObserver.Notifications.Any()) {
+                            <div class="text-muted small italic" style="font-size: 0.6rem;">Oczekiwanie na zapisy...</div>
+                        }
+                        @foreach (var note in trainerObserver.Notifications.Take(3)) {
+                            <div class="note-item">@note</div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-9">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h3 class="fw-bold mb-0">Zarządzanie Grafikiem</h3>
+                <div class="btn-group p-1 bg-white rounded-pill shadow-sm border">
+                    <button class="btn btn-sm rounded-pill px-4 @(viewType == "Group" ? "btn-dark" : "btn-light")" @onclick='() => viewType = "Group"'>Grupowe</button>
+                    <button class="btn btn-sm rounded-pill px-4 @(viewType == "Personal" ? "btn-dark" : "btn-light")" @onclick='() => viewType = "Personal"'>Personalne</button>
+                </div>
+            </div>
+
+            <div class="timetable-container shadow-sm border">
+                <div class="hour-legend">
+                    @for (int h = 8; h <= 20; h++) {
+                        <div class="hour-label">@h:00</div>
+                    }
+                </div>
+
+                <div class="days-grid">
+                    @for (int i = 0; i < 7; i++)
+                    {
+                        var day = StartOfWeek.AddDays(i);
+                        var sessions = Controller.Sessions
+                            .Where(x => (viewType == "Personal" ? x.IsPersonal : !x.IsPersonal) && x.StartTime.Date == day.Date && x.StartTime.Hour >= 8 && x.StartTime.Hour <= 20)
+                            .ToList();
+
+                        <div class="day-column">
+                            <div class="day-header">
+                                <div class="day-name">@day.ToString("ddd", new CultureInfo("pl-PL"))</div>
+                                <div class="day-date">@day.ToString("dd.MM")</div>
+                            </div>
+
+                            <div class="sessions-wrapper">
+                                @foreach (var s in sessions)
+                                {
+                                    <div class="session-item" style="top: @(GetTopOffset(s.StartTime))px; height: @(GetHeight(s.DurationMinutes))px;">
+                                        <div class="session-info">
+                                            <div class="d-flex justify-content-between align-items-start">
+                                                <span class="session-time">@s.StartTime.ToString("HH:mm") - @s.StartTime.AddMinutes(s.DurationMinutes).ToString("HH:mm")</span>
+                                                <div class="d-flex gap-1">
+                                                    <span class="btn-edit" @onclick="() => EditSession(s)">✎</span>
+                                                    <span class="btn-del" @onclick="() => Controller.RemoveSession(s.Id)">✕</span>
+                                                </div>
+                                            </div>
+                                            <div class="session-name text-truncate">@s.Name</div>
+                                            <div class="session-instructor text-truncate">@s.InstructorName</div>
+                                        </div>
+                                        <div class="session-capacity mt-auto">Miejsca: @s.CurrentBookings/@s.MaxCapacity</div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .timetable-container { display: grid; grid-template-columns: 50px 1fr; background: #fff; border-radius: 20px; padding: 15px; max-height: 70vh; overflow-y: auto; position: relative; }
+    .hour-legend { display: flex; flex-direction: column; padding-top: 55px; }
+    .hour-label { height: 60px; font-size: 0.7rem; color: #adb5bd; font-weight: 700; line-height: 1; }
+    .days-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; min-width: 850px; }
+    .day-column { min-width: 110px; }
+    .day-header { height: 50px; text-align: center; position: sticky; top: 0; background: white; z-index: 10; border-bottom: 1px solid #eee; margin-bottom: 5px; }
+    .day-name { font-weight: 900; text-transform: uppercase; font-size: 0.75rem; }
+    .day-date { font-size: 0.65rem; color: #adb5bd; }
+    
+    .sessions-wrapper { position: relative; height: 780px; background-image: linear-gradient(#f8f9fa 1px, transparent 1px); background-size: 100% 60px; border-radius: 8px; }
+    
+    .session-item { position: absolute; left: 0; right: 0; background: #fff; border-left: 4px solid #6c757d; border-radius: 8px; padding: 6px; display: flex; flex-direction: column; z-index: 1; transition: 0.2s; border: 1px solid #eee; overflow: hidden; }
+    .session-item:hover { transform: scale(1.02); z-index: 5; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    
+    .session-time { font-weight: 800; font-size: 0.55rem; color: #495057; }
+    .session-name { font-weight: 700; font-size: 0.75rem; color: #212529; line-height: 1.1; margin-top: 1px; }
+    .session-instructor { font-size: 0.6rem; color: #6c757d; }
+    .session-capacity { font-size: 0.55rem; font-weight: 700; color: #0d6efd; border-top: 1px solid rgba(0,0,0,0.05); padding-top: 2px; }
+
+    .btn-edit, .btn-del { cursor: pointer; font-size: 0.75rem; padding: 0 2px; transition: 0.2s; }
+    .btn-edit:hover { color: #0d6efd; }
+    .btn-del:hover { color: #dc3545; }
+
+    .notification-log { font-size: 0.65rem; color: #666; }
+    .note-item { padding: 6px; border-radius: 6px; background: #f8f9fa; margin-bottom: 4px; border-left: 2px solid #0d6efd; }
+    
+    .fade-in { animation: fadeIn 0.3s ease-out; }
+    @@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+
+@code {
+    private TrainingSession formSession = new();
+    private string sessionType = "Group";
+    private string viewType = "Group";
+    private bool isEditing = false;
+    private Employee trainerObserver = new();
+
+    protected override void OnInitialized()
+    {
+        Controller.OnStateChanged += Refresh;
+        Session.OnSessionChanged += Refresh;
+        
+        Controller.OnNewBooking += trainerObserver.Update;
+        
+        ResetForm();
+    }
+
+    private void Refresh() => InvokeAsync(StateHasChanged);
+
+    private void SaveSession()
+    {
+        if (string.IsNullOrWhiteSpace(formSession.Name)) return;
+
+        formSession.IsPersonal = sessionType == "Personal";
+        formSession.Price = formSession.IsPersonal ? 100 : 15;
+        formSession.MaxCapacity = formSession.IsPersonal ? 1 : 20;
+
+        if (!isEditing)
+        {
+            formSession.Id = Guid.NewGuid().ToString();
+            Controller.AddSession(formSession);
+        }
+
+        CancelEdit();
+    }
+
+    private void EditSession(TrainingSession s)
+    {
+        formSession = s;
+        sessionType = s.IsPersonal ? "Personal" : "Group";
+        isEditing = true;
+    }
+
+    private void CancelEdit()
+    {
+        isEditing = false;
+        ResetForm();
+    }
+
+    private void ResetForm()
+    {
+        formSession = new TrainingSession 
+        { 
+            StartTime = DateTime.Today.AddDays(1).AddHours(10), 
+            InstructorName = Session.Nickname,
+            DurationMinutes = 60 
+        };
+    }
+
+    public void Dispose()
+    {
+        Controller.OnStateChanged -= Refresh;
+        Session.OnSessionChanged -= Refresh;
+        Controller.OnNewBooking -= trainerObserver.Update;
+    }
+
+    private DateTime StartOfWeek => DateTime.Today.AddDays(-(int)(DateTime.Today.DayOfWeek == DayOfWeek.Sunday ? 6 : DateTime.Today.DayOfWeek - DayOfWeek.Monday));
+    
+    private int GetTopOffset(DateTime st) => (int)((st.Hour - 8) * 60 + st.Minute);
+    private int GetHeight(int dur) => dur;
+}
