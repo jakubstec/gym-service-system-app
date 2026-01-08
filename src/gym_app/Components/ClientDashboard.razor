@@ -1,0 +1,352 @@
+@using gym_app.Models
+@using gym_app.Services
+@using System.Globalization
+@inject GymSystemController Controller
+@inject UserSessionService Session
+
+<div class="container pb-5">
+    @if (activeFlow == "" && currentTicket == null)
+    {
+        var myTickets = Controller.GeneratedTickets
+            .Where(t => t.OwnerNickname == Session.Nickname)
+            .OrderByDescending(t => t.ValidDate)
+            .ToList();
+
+        if (myTickets.Any())
+        {
+            <div class="mb-5 fade-in">
+                <h5 class="fw-bold mb-3 text-uppercase small text-muted">Twoje Aktywne Bilety</h5>
+                <div class="d-flex gap-3 overflow-auto pb-3">
+                    @foreach (var ticket in myTickets)
+                    {
+                        <div class="my-ticket-card shadow-sm border-start border-4 @(ticket.ServiceName.Contains("OPEN") ? "border-primary" : (ticket.ServiceName.Contains("Grupowe") ? "border-success" : "border-warning"))"
+                             @onclick="() => currentTicket = ticket" 
+                             style="cursor: pointer;">
+                            
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <div class="ticket-service">@ticket.ServiceName</div>
+                                    <div class="ticket-date">@ticket.ValidDate.ToString("dd.MM HH:mm")</div>
+                                </div>
+                                <button class="btn-remove-ticket" 
+                                        @onclick="() => Controller.RemoveTicket(ticket.TicketId)" 
+                                        @onclick:stopPropagation 
+                                        title="Zrezygnuj">
+                                    ✕
+                                </button>
+                            </div>
+                            <div class="ticket-details mt-2">@ticket.Details</div>
+                            <div class="d-flex justify-content-between align-items-end mt-2">
+                                <div class="ticket-id">ID: @ticket.TicketId.Substring(0, 8).ToUpper()</div>
+                                <div class="ticket-price-sm">@ticket.PricePaid.ToString("C")</div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    }
+
+    @if (currentTicket != null)
+    {
+        <div class="text-center fade-in">
+            <h2 class="fw-bold mb-4">Twój Bilet 🎟️</h2>
+            <div class="mx-auto" style="max-width: 400px;">
+                <TicketBlock Ticket="currentTicket"/>
+            </div>
+            <button class="btn btn-outline-dark rounded-pill px-5 mt-4" @onclick="ResetView">Wróć do menu głównego</button>
+        </div>
+    }
+    else if (activeFlow == "OPEN")
+    {
+        <div class="max-w-500 mx-auto fade-in">
+            <div class="text-center mb-4">
+                <h3 class="fw-bold">Skomponuj Pakiet</h3>
+                <p class="text-muted">Dostosuj wejście do swoich potrzeb</p>
+            </div>
+
+            <div class="custom-toggle active">
+                <div><strong>Siłownia (Podstawa)</strong><br/><small>Strefa cardio i wolnych ciężarów</small></div>
+                <span class="badge bg-dark">W CENIE</span>
+            </div>
+
+            <div class="custom-toggle @(addSauna ? "active" : "")" @onclick="() => addSauna = !addSauna">
+                <div><strong>Strefa SPA & Sauna</strong><br/><small>Relaks po treningu (+10 PLN)</small></div>
+                <input type="checkbox" class="form-check-input" @bind="addSauna" @onclick:stopPropagation>
+            </div>
+
+            <div class="custom-toggle @(addPool ? "active" : "")" @onclick="() => addPool = !addPool">
+                <div><strong>Basen Olimpijski</strong><br/><small>Dostęp do wszystkich torów (+15 PLN)</small></div>
+                <input type="checkbox" class="form-check-input" @bind="addPool" @onclick:stopPropagation>
+            </div>
+
+            <div class="mt-4">
+                <label class="small fw-bold text-muted text-uppercase mb-2 d-block">Typ Zniżki</label>
+                <div class="d-flex gap-2">
+                    @foreach (var d in new[] { "Brak", "Student", "Senior" })
+                    {
+                        <button class="btn btn-sm @(discountType == d ? "btn-primary" : "btn-outline-secondary") rounded-pill px-4"
+                                @onclick="() => discountType = d">
+                            @d
+                        </button>
+                    }
+                </div>
+            </div>
+
+            <div class="mt-5 p-4 bg-dark text-white rounded-4 d-flex justify-content-between align-items-center shadow-lg">
+                <div>
+                    <span class="small opacity-75 text-uppercase">Suma:</span>
+                    <h2 class="mb-0 fw-bold">@CalculateOpenPrice().ToString("C")</h2>
+                </div>
+                <button class="btn btn-light btn-lg rounded-pill px-4 fw-bold" @onclick="GenerateOpenTicket">Kup teraz</button>
+            </div>
+            <button class="btn btn-link w-100 text-muted mt-3 text-decoration-none" @onclick="ResetView">Anuluj</button>
+        </div>
+    }
+    else if (activeFlow == "GROUP" || activeFlow == "PERSONAL")
+    {
+        <div class="fade-in">
+            <div class="d-flex justify-content-between align-items-end mb-3">
+                <div>
+                    <h3 class="fw-bold mb-0">@(activeFlow == "GROUP" ? "Grafik Zajęć" : "Dostępność Trenerów")</h3>
+                    <p class="text-muted small mb-0">Kliknij na zajęcia, aby się zapisać</p>
+                </div>
+                <button class="btn btn-outline-secondary btn-sm rounded-pill px-3" @onclick="ResetView">← Powrót</button>
+            </div>
+            
+            <div class="timetable-container border shadow-sm">
+                <div class="hour-legend">
+                    @for (int h = 8; h <= 20; h++) { <div class="hour-label">@h:00</div> }
+                </div>
+                <div class="days-grid">
+                    @for (int i = 0; i < 7; i++)
+                    {
+                        var day = StartOfWeek.AddDays(i);
+                        var sessions = GetSessionsForDay(day);
+                        <div class="day-column">
+                            <div class="day-header">
+                                <div class="day-name">@day.ToString("ddd", new CultureInfo("pl-PL"))</div>
+                                <div class="day-date">@day.ToString("dd.MM")</div>
+                            </div>
+                            <div class="sessions-wrapper">
+                                @foreach (var session in sessions)
+                                {
+                                    var isBooked = Session != null && session.Participants.Contains(Session.Nickname);
+                                    var isFull = session.CurrentBookings >= session.MaxCapacity;
+
+                                    <div class="session-item @(isBooked ? "booked" : "") @(isFull && !isBooked ? "full" : "")"
+                                         style="top: @(GetTopOffset(session.StartTime))px; height: @(GetHeight(session.DurationMinutes))px;"
+                                         @onclick="() => BookSession(session)">
+                                        <div class="session-info">
+                                            <div class="d-flex justify-content-between align-items-start">
+                                                <span class="session-time">@session.StartTime.ToString("HH:mm")</span>
+                                                @if (isBooked) { <span class="booked-badge">✓</span> }
+                                            </div>
+                                            <div class="session-name text-truncate">@session.Name</div>
+                                            <div class="session-instructor text-truncate">@session.InstructorName</div>
+                                        </div>
+                                        <div class="session-capacity mt-auto">Miejsca: @session.CurrentBookings/@session.MaxCapacity</div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="text-center mb-5 fade-in">
+            <h2 class="fw-bold">W czym możemy Ci pomóc?</h2>
+            <p class="text-muted">Wybierz jedną z opcji, aby rozpocząć</p>
+        </div>
+
+        <div class="row g-4 justify-content-center fade-in">
+            <div class="col-md-4">
+                <div class="service-card shadow-sm h-100" @onclick='() => activeFlow = "OPEN"'>
+                    <div class="card-img-container bg-primary-subtle">
+                        <img src="gym.png" style="width: 60px;"/>
+                    </div>
+                    <div class="card-body p-4 text-center">
+                        <h5 class="fw-bold">Wejście OPEN</h5>
+                        <p class="text-muted small">Dostęp bez limitów czasowych.</p>
+                        <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
+                            <span class="text-primary fw-bold">od 20 PLN</span>
+                            <span class="badge rounded-pill bg-primary px-3">Wybierz</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="service-card shadow-sm h-100" @onclick='() => activeFlow = "GROUP"'>
+                    <div class="card-img-container bg-success-subtle">
+                        <img src="group.png" style="width: 60px;"/>
+                    </div>
+                    <div class="card-body p-4 text-center">
+                        <h5 class="fw-bold">Zajęcia Grupowe</h5>
+                        <p class="text-muted small">Zapisz się na fitness lub jogę.</p>
+                        <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
+                            <span class="text-primary fw-bold">10 PLN</span>
+                            <span class="badge rounded-pill bg-success px-3">Grafik</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="service-card shadow-sm h-100" @onclick='() => activeFlow = "PERSONAL"'>
+                    <div class="card-img-container bg-warning-subtle">
+                        <img src="personal.png" style="width: 60px;"/>
+                    </div>
+                    <div class="card-body p-4 text-center">
+                        <h5 class="fw-bold">Trener Personalny</h5>
+                        <p class="text-muted small">Opieka eksperta 1 na 1.</p>
+                        <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
+                            <span class="text-primary fw-bold">100 PLN</span>
+                            <span class="badge rounded-pill bg-warning text-white px-3">Wybierz</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<style>
+    .max-w-500 { max-width: 500px; }
+    
+    .service-card { border: 1px solid #eee; border-radius: 24px; transition: all 0.3s ease; background: white; cursor: pointer; }
+    .service-card:hover { transform: translateY(-8px); border-color: #0d6efd; box-shadow: 0 12px 24px rgba(0,0,0,0.1) !important; }
+    .card-img-container { height: 140px; border-radius: 24px 24px 0 0; display: flex; align-items: center; justify-content: center; }
+
+    .timetable-container { display: grid; grid-template-columns: 50px 1fr; background: #fff; border-radius: 20px; padding: 15px; max-height: 70vh; overflow-y: auto; position: relative; }
+    .hour-legend { display: flex; flex-direction: column; padding-top: 55px; }
+    .hour-label { height: 60px; font-size: 0.7rem; color: #adb5bd; font-weight: 700; line-height: 1; }
+
+    .days-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; min-width: 850px; }
+    .day-column { min-width: 110px; }
+    
+    .day-header { 
+        height: 50px; text-align: center; position: sticky; top: 0; background: white; z-index: 10; border-bottom: 1px solid #eee; margin-bottom: 5px;
+    }
+
+    .day-name { font-weight: 900; text-transform: uppercase; font-size: 0.75rem; color: #212529; }
+    .day-date { font-size: 0.65rem; color: #adb5bd; }
+
+    /* SKALA: 1 MINUTA = 1 PIKSEL (60px na godzinę) */
+    .sessions-wrapper { 
+        position: relative; height: 780px; background-image: linear-gradient(#f8f9fa 1px, transparent 1px); background-size: 100% 60px; border-radius: 8px; 
+    }
+
+    .session-item { 
+        position: absolute; left: 0; right: 0; background: #f0f7ff; border-left: 3px solid #0d6efd; border-radius: 6px; padding: 5px; cursor: pointer; transition: 0.2s; display: flex; flex-direction: column; z-index: 1; border: 1px solid #eee; overflow: hidden;
+    }
+
+    .session-item:hover { transform: scale(1.02); z-index: 5; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    .session-item.booked { background: #e8f5e9; border-left-color: #198754; }
+    .session-item.full:not(.booked) { background: #f8f9fa; border-left-color: #dee2e6; opacity: 0.6; pointer-events: none; }
+
+    .session-time { font-weight: 800; font-size: 0.55rem; color: #0d6efd; }
+    .booked .session-time { color: #198754; }
+    .booked-badge { background: #198754; color: white; border-radius: 50%; width: 14px; height: 14px; display: flex; align-items: center; justify-content: center; font-size: 0.6rem; }
+    .session-name { font-weight: 700; font-size: 0.75rem; color: #212529; line-height: 1.1; margin-top: 1px; }
+    .session-instructor { font-size: 0.6rem; color: #6c757d; }
+    
+    .session-capacity { font-size: 0.55rem; font-weight: 700; color: #0d6efd; border-top: 1px solid rgba(0,0,0,0.05); padding-top: 2px; margin-top: auto; }
+
+    .custom-toggle { display: flex; justify-content: space-between; align-items: center; padding: 15px; background: #fff; border-radius: 14px; margin-bottom: 10px; cursor: pointer; border: 2px solid #f0f0f0; transition: 0.2s; }
+    .custom-toggle.active { border-color: #0d6efd; background: #f0f7ff; }
+
+    .my-ticket-card {
+         min-width: 240px; background: white; border-radius: 12px; padding: 15px; flex-shrink: 0; border: 1px solid #eee; position: relative; transition: transform 0.2s, border-color 0.2s;
+    }
+    .my-ticket-card:hover { transform: translateY(-3px); border-color: #adb5bd !important; box-shadow: 0 8px 16px rgba(0,0,0,0.1) !important; }
+
+    .btn-remove-ticket { background: #fff5f5; color: #dc3545; border: none; border-radius: 6px; width: 24px; height: 24px; font-size: 0.7rem; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
+    .btn-remove-ticket:hover { background: #dc3545; color: white; }
+
+    .ticket-service { font-weight: 800; font-size: 0.85rem; color: #212529; }
+    .ticket-date { font-size: 0.65rem; color: #adb5bd; }
+    .ticket-details { font-size: 0.7rem; color: #6c757d; font-weight: 500; }
+    .ticket-id { font-size: 0.55rem; color: #ced4da; font-family: monospace; }
+    .ticket-price-sm { font-weight: 800; font-size: 0.8rem; color: #212529; }
+
+    .fade-in { animation: fadeIn 0.3s ease-out; }
+    @@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+
+@code {
+    private string activeFlow = ""; 
+    private TicketData? currentTicket = null;
+    private bool addSauna = false;
+    private bool addPool = false;
+    private string discountType = "Brak";
+
+    private DateTime StartOfWeek => DateTime.Today.AddDays(-(int)(DateTime.Today.DayOfWeek == DayOfWeek.Sunday ? 6 : DateTime.Today.DayOfWeek - DayOfWeek.Monday));
+
+    private IEnumerable<TrainingSession> GetSessionsForDay(DateTime date)
+    {
+        bool isPersonal = activeFlow == "PERSONAL";
+        return Controller.Sessions
+            .Where(s => s.IsPersonal == isPersonal && s.StartTime.Date == date.Date && s.StartTime.Hour >= 8 && s.StartTime.Hour <= 20)
+            .OrderBy(s => s.StartTime);
+    }
+
+    private decimal CalculateOpenPrice()
+    {
+        decimal price = 20m; 
+        if (addSauna) price += 10m;
+        if (addPool) price += 15m;
+        if (discountType == "Student") price *= 0.8m;
+        if (discountType == "Senior") price *= 0.7m;
+        return Math.Round(price, 2);
+    }
+
+    private void GenerateOpenTicket()
+    {
+        currentTicket = new TicketData
+        {
+            ServiceName = "Wejście OPEN",
+            OwnerNickname = Session.Nickname ?? "Gość",
+            PricePaid = CalculateOpenPrice(),
+            ValidDate = DateTime.Now,
+            Details = "Siłownia" + (addSauna ? " + Sauna" : "") + (addPool ? " + Basen" : "")
+        };
+        Controller.AddTicket(currentTicket);
+        activeFlow = "";
+    }
+
+    private void BookSession(TrainingSession session)
+    {
+        if (string.IsNullOrEmpty(Session.Nickname) || session.CurrentBookings >= session.MaxCapacity) return;
+
+        Controller.BookSession(session.Id, Session.Nickname);
+    
+        currentTicket = new TicketData
+        {
+            ServiceName = session.IsPersonal ? "Trening Personalny" : "Zajęcia Grupowe",
+            OwnerNickname = Session.Nickname,
+            PricePaid = session.Price,
+            ValidDate = session.StartTime,
+            Details = $"{session.Name} - {session.InstructorName}",
+            RelatedSessionId = session.Id
+        };
+        
+        Controller.AddTicket(currentTicket); 
+        activeFlow = "";
+    }
+
+    private void ResetView()
+    {
+        activeFlow = "";
+        currentTicket = null;
+        addSauna = false;
+        addPool = false;
+        discountType = "Brak";
+    }
+    
+    private int GetTopOffset(DateTime st) => (int)((st.Hour - 8) * 60 + st.Minute);
+    private int GetHeight(int dur) => dur;
+}

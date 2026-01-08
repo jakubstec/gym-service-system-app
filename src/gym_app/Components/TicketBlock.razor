@@ -1,0 +1,164 @@
+@using gym_app.Models
+
+<div class="ticket-wrapper fade-in">
+    <div class="ticket-main">
+        <div class="ticket-top">
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="brand">gym<span>UJ</span></div>
+                <div class="pass-type text-uppercase">Pass</div>
+            </div>
+            <h4 class="service-name mt-3">@Ticket.ServiceName</h4>
+        </div>
+
+        <div class="ticket-middle">
+            <div class="notch-left"></div>
+            <div class="notch-right"></div>
+            <div class="divider"></div>
+        </div>
+
+        <div class="ticket-content">
+            <div class="row g-3">
+                <div class="col-7 text-start">
+                    <label>Właściciel</label>
+                    <div class="val">@Ticket.OwnerNickname</div>
+                </div>
+                <div class="col-5 text-end">
+                    <label>Cena</label>
+                    <div class="val">@Ticket.PricePaid.ToString("C")</div>
+                </div>
+                <div class="col-12 text-start">
+                    <label>Szczegóły wejścia</label>
+                    <div class="val">@Ticket.Details</div>
+                </div>
+                <div class="col-12 text-start">
+                    <label>Ważność biletu</label>
+                    <div class="val text-primary">
+                        @if (Ticket.ServiceName.Contains("OPEN"))
+                        {
+                            <span>@Ticket.ValidDate.ToString("dd.MM.yyyy") — CAŁY DZIEŃ</span>
+                        }
+                        else
+                        {
+                            @Ticket.ValidDate.ToString("f", new System.Globalization.CultureInfo("pl-PL"))
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <div class="qr-area text-center mt-4">
+                <div class="qr-wrapper mx-auto">
+                    <img src="qr-code.png" alt="QR" />
+                </div>
+                <div class="ticket-id mt-3">
+                    <span>SERIAL NO:</span> @(Ticket.TicketId?.Length > 8 ? Ticket.TicketId.Substring(0, 8).ToUpper() : Ticket.TicketId)
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .ticket-wrapper {
+        padding: 20px;
+        filter: drop-shadow(0 15px 30px rgba(0,0,0,0.1));
+    }
+
+    .ticket-main {
+        width: 100%;
+        max-width: 340px;
+        margin: 0 auto;
+        background: white;
+        border-radius: 24px;
+        position: relative;
+    }
+
+    .ticket-top {
+        background: #212529;
+        color: white;
+        padding: 25px;
+        border-radius: 24px 24px 0 0;
+    }
+
+    .brand { font-weight: 900; font-size: 1.2rem; letter-spacing: -1px; }
+    .brand span { color: #0d6efd; }
+    .pass-type { font-size: 0.65rem; letter-spacing: 2px; opacity: 0.6; }
+    .service-name { font-weight: 800; margin: 0; }
+
+    .ticket-middle {
+        position: relative;
+        height: 20px;
+        background: white;
+        display: flex;
+        align-items: center;
+    }
+
+    .notch-left, .notch-right {
+        position: absolute;
+        width: 20px;
+        height: 20px;
+        background: #f8f9fa; 
+        border-radius: 50%;
+    }
+    .notch-left { left: -10px; }
+    .notch-right { right: -10px; }
+
+    .divider {
+        width: 100%;
+        margin: 0 20px;
+        border-top: 2px dashed #eee;
+    }
+
+    .ticket-content {
+        padding: 10px 25px 30px 25px;
+    }
+
+    .ticket-content label {
+        display: block;
+        font-size: 0.65rem;
+        text-transform: uppercase;
+        color: #adb5bd;
+        font-weight: 700;
+        margin-bottom: 2px;
+    }
+
+    .val {
+        font-weight: 700;
+        font-size: 0.95rem;
+        color: #212529;
+    }
+
+    .qr-wrapper {
+        width: 140px;
+        height: 140px;
+        padding: 10px;
+        border: 1px solid #f0f0f0;
+        border-radius: 16px;
+    }
+
+    .qr-wrapper img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+    }
+
+    .ticket-id {
+        font-family: 'Monaco', 'Consolas', monospace;
+        font-size: 0.7rem;
+        color: #adb5bd;
+    }
+    
+    .ticket-id span { opacity: 0.5; }
+
+    .fade-in {
+        animation: tktFade 0.5s ease-out;
+    }
+
+    @@keyframes tktFade {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+</style>
+
+@code {
+    [Parameter] public TicketData Ticket { get; set; } = new();
+}

@@ -1,0 +1,95 @@
+﻿@page "/"
+@using gym_app.Models
+@using gym_app.Services
+@using gym_app.Components
+@inject GymSystemController Controller
+@inject UserSessionService Session
+@implements IDisposable
+
+<div class="d-flex flex-column min-vh-100">
+    <div class="flex-grow-1 container mt-4">
+        @if (!Session.IsLoggedIn) @* Sprawdzamy w Session, nie w Controller *@
+        {
+            <LoginView />
+        }
+        else
+        {
+            <UserHeader />
+            @if (Session.Role == UserRole.Client)
+            {
+                <ClientDashboard />
+            }
+            else
+            {
+                <EmployeeDashboard />
+            }
+        }
+    </div>
+
+    <footer class="gym-footer">
+        <div class="footer-content">
+            <div class="footer-brand">gym<span>UJ</span></div>
+            <p class="footer-tagline">Redefining Fitness Excellence • 2026</p>
+            <div class="footer-divider"></div>
+        </div>
+    </footer>
+</div>
+
+@code {
+    protected override void OnInitialized()
+    {
+        Controller.OnStateChanged += Refresh;
+        Session.OnSessionChanged += Refresh;
+    }
+
+    private void Refresh() => InvokeAsync(StateHasChanged);
+
+    public void Dispose()
+    {
+        Controller.OnStateChanged -= Refresh;
+        Session.OnSessionChanged -= Refresh;
+    }
+}
+
+<style>
+    .gym-footer {
+        padding: 3rem 0;
+        text-align: center;
+        border-top: 1px solid #f0f0f0;
+    }
+
+    .footer-brand {
+        font-weight: 900;
+        font-size: 1.5rem;
+        letter-spacing: -1px;
+        color: #212529;
+        margin-bottom: 0.5rem;
+    }
+
+    .footer-brand span {
+        color: #0d6efd;
+    }
+
+    .footer-tagline {
+        font-size: 0.85rem;
+        color: #6c757d;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        margin-bottom: 1.5rem;
+    }
+
+    .footer-divider {
+        width: 40px;
+        height: 2px;
+        background: #0d6efd;
+        margin: 0 auto 1.5rem;
+        border-radius: 2px;
+        opacity: 0.3;
+    }
+
+    .footer-legal {
+        font-size: 0.75rem;
+        color: #adb5bd;
+        font-style: italic;
+    }
+</style>
