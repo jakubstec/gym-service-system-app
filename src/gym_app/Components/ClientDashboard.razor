@@ -96,9 +96,9 @@
             <div class="mt-5 p-4 bg-dark text-white rounded-4 d-flex justify-content-between align-items-center shadow-lg">
                 <div>
                     <span class="small opacity-75 text-uppercase">Suma:</span>
-                    <h2 class="mb-0 fw-bold">@CalculateOpenPrice().ToString("C")</h2>
+                    <h2 class="mb-0 fw-bold">@GetCurrentPrice().ToString("C")</h2>
                 </div>
-                <button class="btn btn-light btn-lg rounded-pill px-4 fw-bold" @onclick="GenerateOpenTicket">Kup teraz</button>
+                <button class="btn btn-light btn-lg rounded-pill px-4 fw-bold" @onclick="BuyWithBuilder">Kup teraz</button>
             </div>
             <button class="btn btn-link w-100 text-muted mt-3 text-decoration-none" @onclick="ResetView">Anuluj</button>
         </div>
@@ -188,7 +188,7 @@
                         <h5 class="fw-bold">Zajęcia Grupowe</h5>
                         <p class="text-muted small">Zapisz się na fitness lub jogę.</p>
                         <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
-                            <span class="text-primary fw-bold">10 PLN</span>
+                            <span class="text-primary fw-bold">15 PLN</span>
                             <span class="badge rounded-pill bg-success px-3">Grafik</span>
                         </div>
                     </div>
@@ -294,26 +294,37 @@
             .OrderBy(s => s.StartTime);
     }
 
-    private decimal CalculateOpenPrice()
+    private IPriceStrategy GetStrategy()
     {
-        decimal price = 20m; 
-        if (addSauna) price += 10m;
-        if (addPool) price += 15m;
-        if (discountType == "Student") price *= 0.8m;
-        if (discountType == "Senior") price *= 0.7m;
-        return Math.Round(price, 2);
+        return discountType switch
+        {
+            "Student" => new StudentDiscountStrategy(),
+            "Senior" => new SeniorDiscountStrategy(),
+            _ => new NormalPriceStrategy()
+        };
     }
 
-    private void GenerateOpenTicket()
+    private decimal GetCurrentPrice()
     {
-        currentTicket = new TicketData
-        {
-            ServiceName = "Wejście OPEN",
-            OwnerNickname = Session.Nickname ?? "Gość",
-            PricePaid = CalculateOpenPrice(),
-            ValidDate = DateTime.Now,
-            Details = "Siłownia" + (addSauna ? " + Sauna" : "") + (addPool ? " + Basen" : "")
-        };
+        var builder = new OpenTicketBuilder(Session.Nickname);
+        if (addSauna) builder.AddSauna();
+        if (addPool) builder.AddPool();
+        builder.ApplyDiscount(GetStrategy());
+        
+        return builder.Build().PricePaid;
+    }
+
+    private void BuyWithBuilder()
+    {
+        var builder = new OpenTicketBuilder(Session.Nickname);
+        
+        if (addSauna) builder.AddSauna();
+        if (addPool) builder.AddPool();
+        
+        builder.ApplyDiscount(GetStrategy());
+        
+        currentTicket = builder.Build();
+
         Controller.AddTicket(currentTicket);
         activeFlow = "";
     }
