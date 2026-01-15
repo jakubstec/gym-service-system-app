@@ -38,7 +38,7 @@
                             <div class="ticket-details mt-2">@ticket.Details</div>
                             <div class="d-flex justify-content-between align-items-end mt-2">
                                 <div class="ticket-id">ID: @ticket.TicketId.Substring(0, 8).ToUpper()</div>
-                                <div class="ticket-price-sm">@ticket.PricePaid.ToString("C")</div>
+                                <div class="ticket-price-sm">@ticket.PricePaid.ToString("F2") PLN</div>
                             </div>
                         </div>
                     }
@@ -96,7 +96,7 @@
             <div class="mt-5 p-4 bg-dark text-white rounded-4 d-flex justify-content-between align-items-center shadow-lg">
                 <div>
                     <span class="small opacity-75 text-uppercase">Suma:</span>
-                    <h2 class="mb-0 fw-bold">@GetCurrentPrice().ToString("C")</h2>
+                    <h2 class="mb-0 fw-bold">@GetCurrentPrice().ToString("F2") PLN</h2>
                 </div>
                 <button class="btn btn-light btn-lg rounded-pill px-4 fw-bold" @onclick="BuyWithBuilder">Kup teraz</button>
             </div>
@@ -235,7 +235,6 @@
     .day-name { font-weight: 900; text-transform: uppercase; font-size: 0.75rem; color: #212529; }
     .day-date { font-size: 0.65rem; color: #adb5bd; }
 
-    /* SKALA: 1 MINUTA = 1 PIKSEL (60px na godzinę) */
     .sessions-wrapper { 
         position: relative; height: 780px; background-image: linear-gradient(#f8f9fa 1px, transparent 1px); background-size: 100% 60px; border-radius: 8px; 
     }
