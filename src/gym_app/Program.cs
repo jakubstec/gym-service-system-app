@@ -1,8 +1,7 @@
 using gym_app.Components;
-using gym_app.Services;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
+using gym_app.Controllers;
+using gym_app.Abstractions;
+using gym_app.Services.Sessions;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,7 +9,7 @@ builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
 builder.Services.AddSingleton<GymSystemController>();
-builder.Services.AddScoped<UserSessionService>();
+builder.Services.AddScoped<IUserSessionService, UserSessionService>();
 
 var app = builder.Build();
 

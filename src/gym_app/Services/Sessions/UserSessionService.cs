@@ -1,12 +1,13 @@
-namespace gym_app.Services;
+using gym_app.Abstractions;
 using gym_app.Models;
 
-public class UserSessionService
+namespace gym_app.Services.Sessions;
+
+public class UserSessionService : IUserSessionService
 {
     public string Nickname { get; set; } = "";
     public UserRole? Role { get; set; }
     public bool IsLoggedIn => Role != null;
-
     public event Action? OnSessionChanged;
 
     public void Login(string nick, UserRole role)

@@ -2,7 +2,7 @@
 @using gym_app.Services
 @using System.Globalization
 @inject GymSystemController Controller
-@inject UserSessionService Session
+@inject IUserSessionService Session
 
 <div class="container pb-5">
     @if (activeFlow == "" && currentTicket == null)

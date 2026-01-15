@@ -1,9 +1,9 @@
-using gym_app.Models;
+namespace gym_app.Models;
 
 public class Employee : IObserver
 {
     public string Name { get; set; } = "";
-    public List<string> Notifications { get; set; } = new();
+    public List<string> Notifications { get; set; } = [];
 
     public void Update(string message)
     {
