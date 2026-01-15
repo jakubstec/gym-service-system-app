@@ -7,6 +7,54 @@
 @implements IDisposable
 
 <div class="container-fluid pb-5 px-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm" style="border-radius: 20px;">
+                <div class="card-header bg-primary text-white" style="border-radius: 20px 20px 0 0;">
+                    <h5 class="mb-0 fw-bold">Panel Notyfikacji Trenerów</h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="row g-3">
+                        @foreach (var employee in Controller.Employees)
+                        {
+                            <div class="col-md-4 col-lg-2">
+                                <div class="notification-box">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <h6 class="fw-bold text-primary mb-0">@employee.Name</h6>
+                                        <span class="badge bg-primary rounded-pill">@employee.Notifications.Count</span>
+                                    </div>
+                                    <div class="notification-list">
+                                        @if (employee.Notifications.Any())
+                                        {
+                                            @foreach (var notif in employee.Notifications.Take(3))
+                                            {
+                                                <div class="notification-item">
+                                                    <small>@notif</small>
+                                                </div>
+                                            }
+                                            @if (employee.Notifications.Count > 3)
+                                            {
+                                                <div class="text-center mt-2">
+                                                    <small class="text-muted">+ @(employee.Notifications.Count - 3) więcej</small>
+                                                </div>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <div class="text-center py-2">
+                                                <small class="text-muted fst-italic">Brak notyfikacji</small>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="row g-4">
         <div class="col-lg-3">
             <div class="card border-0 shadow-sm p-4 sticky-top" style="top: 20px; border-radius: 24px; background: #fff;">
@@ -53,18 +101,6 @@
                     @if(isEditing) {
                         <button class="btn btn-light btn-sm rounded-pill" @onclick="CancelEdit">✕</button>
                     }
-                </div>
-                
-                <div class="mt-4 border-top pt-3">
-                    <h6 class="fw-bold small text-muted text-uppercase mb-2" style="font-size: 0.65rem;">Live Feed (Observer)</h6>
-                    <div class="notification-log">
-                        @if (!trainerObserver.Notifications.Any()) {
-                            <div class="text-muted small italic" style="font-size: 0.6rem;">Oczekiwanie na zapisy...</div>
-                        }
-                        @foreach (var note in trainerObserver.Notifications.Take(3)) {
-                            <div class="note-item">@note</div>
-                        }
-                    </div>
                 </div>
             </div>
         </div>
@@ -127,34 +163,186 @@
 </div>
 
 <style>
-    .timetable-container { display: grid; grid-template-columns: 50px 1fr; background: #fff; border-radius: 20px; padding: 15px; max-height: 70vh; overflow-y: auto; position: relative; }
-    .hour-legend { display: flex; flex-direction: column; padding-top: 55px; }
-    .hour-label { height: 60px; font-size: 0.7rem; color: #adb5bd; font-weight: 700; line-height: 1; }
-    .days-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; min-width: 850px; }
-    .day-column { min-width: 110px; }
-    .day-header { height: 50px; text-align: center; position: sticky; top: 0; background: white; z-index: 10; border-bottom: 1px solid #eee; margin-bottom: 5px; }
-    .day-name { font-weight: 900; text-transform: uppercase; font-size: 0.75rem; }
-    .day-date { font-size: 0.65rem; color: #adb5bd; }
+    .notification-box {
+        background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+        padding: 15px;
+        border-radius: 12px;
+        border-left: 4px solid #0d6efd;
+        height: 100%;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
     
-    .sessions-wrapper { position: relative; height: 780px; background-image: linear-gradient(#f8f9fa 1px, transparent 1px); background-size: 100% 60px; border-radius: 8px; }
+    .notification-list {
+        max-height: 200px;
+        overflow-y: auto;
+        margin: 10px 0;
+    }
     
-    .session-item { position: absolute; left: 0; right: 0; background: #fff; border-left: 4px solid #6c757d; border-radius: 8px; padding: 6px; display: flex; flex-direction: column; z-index: 1; transition: 0.2s; border: 1px solid #eee; overflow: hidden; }
-    .session-item:hover { transform: scale(1.02); z-index: 5; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    .notification-item {
+        padding: 8px 10px;
+        border-bottom: 1px solid #e9ecef;
+        font-size: 0.8rem;
+        color: #495057;
+        background: white;
+        border-radius: 6px;
+        margin-bottom: 5px;
+        transition: all 0.2s;
+    }
     
-    .session-time { font-weight: 800; font-size: 0.55rem; color: #495057; }
-    .session-name { font-weight: 700; font-size: 0.75rem; color: #212529; line-height: 1.1; margin-top: 1px; }
-    .session-instructor { font-size: 0.6rem; color: #6c757d; }
-    .session-capacity { font-size: 0.55rem; font-weight: 700; color: #0d6efd; border-top: 1px solid rgba(0,0,0,0.05); padding-top: 2px; }
+    .notification-item:hover {
+        background: #f8f9fa;
+        transform: translateX(3px);
+    }
+    
+    .notification-item:last-child {
+        border-bottom: none;
+    }
 
-    .btn-edit, .btn-del { cursor: pointer; font-size: 0.75rem; padding: 0 2px; transition: 0.2s; }
-    .btn-edit:hover { color: #0d6efd; }
-    .btn-del:hover { color: #dc3545; }
-
-    .notification-log { font-size: 0.65rem; color: #666; }
-    .note-item { padding: 6px; border-radius: 6px; background: #f8f9fa; margin-bottom: 4px; border-left: 2px solid #0d6efd; }
+    /* Timetable */
+    .timetable-container { 
+        display: grid; 
+        grid-template-columns: 50px 1fr; 
+        background: #fff; 
+        border-radius: 20px; 
+        padding: 15px; 
+        max-height: 70vh; 
+        overflow-y: auto; 
+        position: relative; 
+    }
     
-    .fade-in { animation: fadeIn 0.3s ease-out; }
-    @@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .hour-legend { 
+        display: flex; 
+        flex-direction: column; 
+        padding-top: 55px; 
+    }
+    
+    .hour-label { 
+        height: 60px; 
+        font-size: 0.7rem; 
+        color: #adb5bd; 
+        font-weight: 700; 
+        line-height: 1; 
+    }
+    
+    .days-grid { 
+        display: grid; 
+        grid-template-columns: repeat(7, 1fr); 
+        gap: 10px; 
+        min-width: 850px; 
+    }
+    
+    .day-column { 
+        min-width: 110px; 
+    }
+    
+    .day-header { 
+        height: 50px; 
+        text-align: center; 
+        position: sticky; 
+        top: 0; 
+        background: white; 
+        z-index: 10; 
+        border-bottom: 1px solid #eee; 
+        margin-bottom: 5px; 
+    }
+    
+    .day-name { 
+        font-weight: 900; 
+        text-transform: uppercase; 
+        font-size: 0.75rem; 
+    }
+    
+    .day-date { 
+        font-size: 0.65rem; 
+        color: #adb5bd; 
+    }
+    
+    .sessions-wrapper { 
+        position: relative; 
+        height: 780px; 
+        background-image: linear-gradient(#f8f9fa 1px, transparent 1px); 
+        background-size: 100% 60px; 
+        border-radius: 8px; 
+    }
+    
+    .session-item { 
+        position: absolute; 
+        left: 0; 
+        right: 0; 
+        background: #fff; 
+        border-left: 4px solid #6c757d; 
+        border-radius: 8px; 
+        padding: 6px; 
+        display: flex; 
+        flex-direction: column; 
+        z-index: 1; 
+        transition: 0.2s; 
+        border: 1px solid #eee; 
+        overflow: hidden; 
+    }
+    
+    .session-item:hover { 
+        transform: scale(1.02); 
+        z-index: 5; 
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1); 
+    }
+    
+    .session-time { 
+        font-weight: 800; 
+        font-size: 0.55rem; 
+        color: #495057; 
+    }
+    
+    .session-name { 
+        font-weight: 700; 
+        font-size: 0.75rem; 
+        color: #212529; 
+        line-height: 1.1; 
+        margin-top: 1px; 
+    }
+    
+    .session-instructor { 
+        font-size: 0.6rem; 
+        color: #6c757d; 
+    }
+    
+    .session-capacity { 
+        font-size: 0.55rem; 
+        font-weight: 700; 
+        color: #0d6efd; 
+        border-top: 1px solid rgba(0,0,0,0.05); 
+        padding-top: 2px; 
+    }
+
+    .btn-edit, .btn-del { 
+        cursor: pointer; 
+        font-size: 0.75rem; 
+        padding: 0 2px; 
+        transition: 0.2s; 
+    }
+    
+    .btn-edit:hover { 
+        color: #0d6efd; 
+    }
+    
+    .btn-del:hover { 
+        color: #dc3545; 
+    }
+    
+    .fade-in { 
+        animation: fadeIn 0.3s ease-out; 
+    }
+    
+    @@keyframes fadeIn { 
+        from { 
+            opacity: 0; 
+            transform: translateY(10px); 
+        } 
+        to { 
+            opacity: 1; 
+            transform: translateY(0); 
+        } 
+    }
 </style>
 
 @code {
@@ -162,14 +350,12 @@
     private string sessionType = "Group";
     private string viewType = "Group";
     private bool isEditing = false;
-    private Employee trainerObserver = new();
 
     protected override void OnInitialized()
     {
         Controller.OnStateChanged += Refresh;
+        Controller.OnNewBooking += (msg) => Refresh();
         Session.OnSessionChanged += Refresh;
-        
-        Controller.OnNewBooking += trainerObserver.Update;
         
         ResetForm();
     }
@@ -220,7 +406,6 @@
     {
         Controller.OnStateChanged -= Refresh;
         Session.OnSessionChanged -= Refresh;
-        Controller.OnNewBooking -= trainerObserver.Update;
     }
 
     private DateTime StartOfWeek => DateTime.Today.AddDays(-(int)(DateTime.Today.DayOfWeek == DayOfWeek.Sunday ? 6 : DateTime.Today.DayOfWeek - DayOfWeek.Monday));

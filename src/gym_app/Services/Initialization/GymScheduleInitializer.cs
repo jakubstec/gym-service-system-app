@@ -6,26 +6,44 @@ public static class GymScheduleInitializer
 {
     public static List<TrainingSession> InitializeSchedule()
     {
-        var sessions = new List<TrainingSession>
-        {
-            SessionFactory.CreateGroupClass("Joga Poranna", "Ola", 0, 9.0, 60),
-            SessionFactory.CreateGroupClass("Zumba", "Kasia", 0, 18.0, 60),
-            SessionFactory.CreateGroupClass("Pilates", "Ola", 1, 10.5, 60),
-            SessionFactory.CreateGroupClass("Crossfit", "Marek", 1, 19.0, 90),
-            SessionFactory.CreateGroupClass("Rowery", "Ola", 2, 12.0, 90),
-            SessionFactory.CreateGroupClass("HIIT Express", "Kasia", 2, 14.0, 60),
-            SessionFactory.CreateGroupClass("Pilates", "Ola", 3, 10.5, 60),
-            SessionFactory.CreateGroupClass("Spinning", "Marek", 3, 16.5, 90),
-            SessionFactory.CreateGroupClass("Stretching", "Ola", 4, 9.0, 60),
-            SessionFactory.CreateGroupClass("Zumba Party", "Kasia", 4, 18.0, 120),
-        };
+        var sessions = new List<TrainingSession>();
+        var today = DateTime.Today;
 
-        for (int day = 0; day < 5; day++)
+        for (int dayOffset = 0; dayOffset < 7; dayOffset++)
         {
-            sessions.Add(SessionFactory.CreatePersonalTraining("Trening Personalny", "Piotr (Trener)", day, 8.0));
-            sessions.Add(SessionFactory.CreatePersonalTraining("Kulturystyka 1:1", "Ania (Pro)", day, 13.0));
-            sessions.Add(SessionFactory.CreatePersonalTraining("Trening Personalny", "Piotr (Trener)", day, 8.0));
-            sessions.Add(SessionFactory.CreatePersonalTraining("Wsparcie Formy", "Michał (Trener)", day, 15.0));
+            var date = today.AddDays(dayOffset);
+            int dayOfWeek = (int)date.DayOfWeek;
+
+            if (dayOfWeek >= 1 && dayOfWeek <= 5)
+            {
+                switch (dayOfWeek)
+                {
+                    case 1:
+                        sessions.Add(SessionFactory.CreateGroupClass("Joga Poranna", "Ola", dayOffset, 9.0, 60));
+                        sessions.Add(SessionFactory.CreateGroupClass("Zumba", "Kasia", dayOffset, 18.0, 60));
+                        break;
+                    case 2:
+                        sessions.Add(SessionFactory.CreateGroupClass("Pilates", "Ola", dayOffset, 10.5, 60));
+                        sessions.Add(SessionFactory.CreateGroupClass("Crossfit", "Marek", dayOffset, 19.0, 90));
+                        break;
+                    case 3:
+                        sessions.Add(SessionFactory.CreateGroupClass("Rowery", "Ola", dayOffset, 12.0, 90));
+                        sessions.Add(SessionFactory.CreateGroupClass("HIIT Express", "Kasia", dayOffset, 14.0, 60));
+                        break;
+                    case 4:
+                        sessions.Add(SessionFactory.CreateGroupClass("Pilates", "Ola", dayOffset, 10.5, 60));
+                        sessions.Add(SessionFactory.CreateGroupClass("Spinning", "Marek", dayOffset, 16.5, 90));
+                        break;
+                    case 5:
+                        sessions.Add(SessionFactory.CreateGroupClass("Stretching", "Ola", dayOffset, 9.0, 60));
+                        sessions.Add(SessionFactory.CreateGroupClass("Zumba Party", "Kasia", dayOffset, 18.0, 120));
+                        break;
+                }
+
+                sessions.Add(SessionFactory.CreatePersonalTraining("Trening Personalny", "Piotr", dayOffset, 8.0));
+                sessions.Add(SessionFactory.CreatePersonalTraining("Kulturystyka 1:1", "Ania", dayOffset, 13.0));
+                sessions.Add(SessionFactory.CreatePersonalTraining("Wsparcie Formy", "Michał", dayOffset, 15.0));
+            }
         }
 
         return sessions;
