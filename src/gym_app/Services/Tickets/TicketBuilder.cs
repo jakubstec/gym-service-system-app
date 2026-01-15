@@ -2,11 +2,19 @@ using gym_app.Models;
 
 namespace gym_app.Services;
 
+
+public static class TicketPricing
+{
+    public const decimal BASE_PRICE = 20m;
+    public const decimal SAUNA_ADDON = 10m;
+    public const decimal POOL_ADDON = 15m;
+}
+
 public class OpenTicketBuilder
 {
     private TicketData _ticket;
-    private decimal _basePrice = 20m;
-    private List<string> _features = new();
+    private decimal _price = TicketPricing.BASE_PRICE;
+    private List<string> _features = [];
 
     public OpenTicketBuilder(string ownerNickname)
     {
@@ -23,20 +31,20 @@ public class OpenTicketBuilder
     public OpenTicketBuilder AddSauna()
     {
         _features.Add("Sauna");
-        _basePrice += 10m;
+        _price += TicketPricing.SAUNA_ADDON;
         return this;
     }
 
     public OpenTicketBuilder AddPool()
     {
         _features.Add("Basen");
-        _basePrice += 15m;
+        _price += TicketPricing.POOL_ADDON;
         return this;
     }
 
     public OpenTicketBuilder ApplyDiscount(IPriceStrategy strategy)
     {
-        _basePrice = strategy.Calculate(_basePrice);
+        _price = strategy.Calculate(_price);
         
         if (strategy is not NormalPriceStrategy)
             _features.Add($"Zniżka: {strategy.GetDiscountName()}");
@@ -46,7 +54,7 @@ public class OpenTicketBuilder
 
     public TicketData Build()
     {
-        _ticket.PricePaid = Math.Round(_basePrice, 2);
+        _ticket.PricePaid = Math.Round(_price, 2);
         _ticket.Details = string.Join(" + ", _features);
         return _ticket;
     }

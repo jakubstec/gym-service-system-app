@@ -4,7 +4,7 @@ namespace gym_app.Services;
 
 public static class SessionFactory
 {
-    private static readonly DateTime BaseDate = new DateTime(2026, 1, 5);
+    private static readonly DateTime BaseDate = DateTime.Today;
     
     public static TrainingSession CreateGroupClass(string name, string instructor, int dayOffset, double startHour, int durationMinutes)
     {

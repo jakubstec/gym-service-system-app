@@ -1,8 +1,9 @@
 @using gym_app.Models
 @using gym_app.Services
 @using System.Globalization
+@using gym_app.Controllers
 @inject GymSystemController Controller
-@inject UserSessionService Session
+@inject IUserSessionService Session
 @implements IDisposable
 
 <div class="container-fluid pb-5 px-4">

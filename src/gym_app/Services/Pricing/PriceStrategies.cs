@@ -1,11 +1,5 @@
 namespace gym_app.Services;
 
-public interface IPriceStrategy
-{
-    decimal Calculate(decimal basePrice);
-    string GetDiscountName();
-}
-
 public class NormalPriceStrategy : IPriceStrategy
 {
     public decimal Calculate(decimal basePrice) => basePrice;

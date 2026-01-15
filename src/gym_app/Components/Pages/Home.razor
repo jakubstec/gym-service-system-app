@@ -2,8 +2,9 @@
 @using gym_app.Models
 @using gym_app.Services
 @using gym_app.Components
+@using gym_app.Controllers
 @inject GymSystemController Controller
-@inject UserSessionService Session
+@inject IUserSessionService Session
 @implements IDisposable
 
 <div class="d-flex flex-column min-vh-100">
