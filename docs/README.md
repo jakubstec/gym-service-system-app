@@ -34,8 +34,7 @@ Aplikacja do zarządzania systemem rezerwacji zajęć fitness w siłowni. System
 ### 4. **Builder Pattern** (Budowniczy)
 **Zastosowanie:** Konstrukcja złożonych obiektów biletów
 - `TicketBuilder` - budowniczy biletów
-- Fluent API:
-  - `ForSession()` - ustawia sesję
-  - `WithDiscount()` - aplikuje strategię cenową
-  - `WithExpiry()` - ustawia datę ważności
+  - `AddPool()` - dodaje basen
+  - `AddSauna()` - dodaje saunę
+  - `ApplyDiscount()` - uwzględnia rabat
   - `Build()` - tworzy finalny obiekt
