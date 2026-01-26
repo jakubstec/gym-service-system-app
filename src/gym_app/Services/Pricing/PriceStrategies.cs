@@ -1,4 +1,5 @@
-namespace gym_app.Services;
+namespace gym_app.Services.Pricing;
+using Abstractions;
 
 public class NormalPriceStrategy : IPriceStrategy
 {

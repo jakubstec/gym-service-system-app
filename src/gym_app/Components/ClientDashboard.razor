@@ -1,11 +1,11 @@
-@using gym_app.Models
-@using gym_app.Services
+@using gym_app.Services.Tickets
+@using gym_app.Services.Pricing
 @using System.Globalization
 @inject GymSystemController Controller
 @inject IUserSessionService Session
 
 <div class="container pb-5">
-    @if (activeFlow == "" && currentTicket == null)
+    @if (_activeFlow == "" && _currentTicket == null)
     {
         var myTickets = Controller.GeneratedTickets
             .Where(t => t.OwnerNickname == Session.Nickname)
@@ -20,7 +20,7 @@
                     @foreach (var ticket in myTickets)
                     {
                         <div class="my-ticket-card shadow-sm border-start border-4 @(ticket.ServiceName.Contains("OPEN") ? "border-primary" : (ticket.ServiceName.Contains("Grupowe") ? "border-success" : "border-warning"))"
-                             @onclick="() => currentTicket = ticket" 
+                             @onclick="() => _currentTicket = ticket" 
                              style="cursor: pointer;">
                             
                             <div class="d-flex justify-content-between align-items-start">
@@ -47,17 +47,17 @@
         }
     }
 
-    @if (currentTicket != null)
+    @if (_currentTicket != null)
     {
         <div class="text-center fade-in">
             <h2 class="fw-bold mb-4">Twój Bilet 🎟️</h2>
             <div class="mx-auto" style="max-width: 400px;">
-                <TicketBlock Ticket="currentTicket"/>
+                <TicketBlock Ticket="_currentTicket"/>
             </div>
             <button class="btn btn-outline-dark rounded-pill px-5 mt-4" @onclick="ResetView">Wróć do menu głównego</button>
         </div>
     }
-    else if (activeFlow == "OPEN")
+    else if (_activeFlow == "OPEN")
     {
         <div class="max-w-500 mx-auto fade-in">
             <div class="text-center mb-4">
@@ -70,14 +70,14 @@
                 <span class="badge bg-dark">W CENIE</span>
             </div>
 
-            <div class="custom-toggle @(addSauna ? "active" : "")" @onclick="() => addSauna = !addSauna">
+            <div class="custom-toggle @(_addSauna ? "active" : "")" @onclick="() => _addSauna = !_addSauna">
                 <div><strong>Strefa SPA & Sauna</strong><br/><small>Relaks po treningu (+10 PLN)</small></div>
-                <input type="checkbox" class="form-check-input" @bind="addSauna" @onclick:stopPropagation>
+                <input type="checkbox" class="form-check-input" @bind="_addSauna" @onclick:stopPropagation>
             </div>
 
-            <div class="custom-toggle @(addPool ? "active" : "")" @onclick="() => addPool = !addPool">
+            <div class="custom-toggle @(_addPool ? "active" : "")" @onclick="() => _addPool = !_addPool">
                 <div><strong>Basen Olimpijski</strong><br/><small>Dostęp do wszystkich torów (+15 PLN)</small></div>
-                <input type="checkbox" class="form-check-input" @bind="addPool" @onclick:stopPropagation>
+                <input type="checkbox" class="form-check-input" @bind="_addPool" @onclick:stopPropagation>
             </div>
 
             <div class="mt-4">
@@ -85,8 +85,8 @@
                 <div class="d-flex gap-2">
                     @foreach (var d in new[] { "Brak", "Student", "Senior" })
                     {
-                        <button class="btn btn-sm @(discountType == d ? "btn-primary" : "btn-outline-secondary") rounded-pill px-4"
-                                @onclick="() => discountType = d">
+                        <button class="btn btn-sm @(_discountType == d ? "btn-primary" : "btn-outline-secondary") rounded-pill px-4"
+                                @onclick="() => _discountType = d">
                             @d
                         </button>
                     }
@@ -103,12 +103,12 @@
             <button class="btn btn-link w-100 text-muted mt-3 text-decoration-none" @onclick="ResetView">Anuluj</button>
         </div>
     }
-    else if (activeFlow == "GROUP" || activeFlow == "PERSONAL")
+    else if (_activeFlow == "GROUP" || _activeFlow == "PERSONAL")
     {
         <div class="fade-in">
             <div class="d-flex justify-content-between align-items-end mb-3">
                 <div>
-                    <h3 class="fw-bold mb-0">@(activeFlow == "GROUP" ? "Grafik Zajęć" : "Dostępność Trenerów")</h3>
+                    <h3 class="fw-bold mb-0">@(_activeFlow == "GROUP" ? "Grafik Zajęć" : "Dostępność Trenerów")</h3>
                     <p class="text-muted small mb-0">Kliknij na zajęcia, aby się zapisać</p>
                 </div>
                 <button class="btn btn-outline-secondary btn-sm rounded-pill px-3" @onclick="ResetView">← Powrót</button>
@@ -164,7 +164,7 @@
 
         <div class="row g-4 justify-content-center fade-in">
             <div class="col-md-4">
-                <div class="service-card shadow-sm h-100" @onclick='() => activeFlow = "OPEN"'>
+                <div class="service-card shadow-sm h-100" @onclick='() => _activeFlow = "OPEN"'>
                     <div class="card-img-container bg-primary-subtle">
                         <img src="gym.png" style="width: 60px;"/>
                     </div>
@@ -180,7 +180,7 @@
             </div>
 
             <div class="col-md-4">
-                <div class="service-card shadow-sm h-100" @onclick='() => activeFlow = "GROUP"'>
+                <div class="service-card shadow-sm h-100" @onclick='() => _activeFlow = "GROUP"'>
                     <div class="card-img-container bg-success-subtle">
                         <img src="group.png" style="width: 60px;"/>
                     </div>
@@ -196,7 +196,7 @@
             </div>
 
             <div class="col-md-4">
-                <div class="service-card shadow-sm h-100" @onclick='() => activeFlow = "PERSONAL"'>
+                <div class="service-card shadow-sm h-100" @onclick='() => _activeFlow = "PERSONAL"'>
                     <div class="card-img-container bg-warning-subtle">
                         <img src="personal.png" style="width: 60px;"/>
                     </div>
@@ -277,17 +277,17 @@
 </style>
 
 @code {
-    private string activeFlow = ""; 
-    private TicketData? currentTicket = null;
-    private bool addSauna = false;
-    private bool addPool = false;
-    private string discountType = "Brak";
+    private string _activeFlow = ""; 
+    private TicketData? _currentTicket;
+    private bool _addSauna;
+    private bool _addPool;
+    private string _discountType = "Brak";
 
-    private DateTime StartOfWeek => DateTime.Today.AddDays(-(int)(DateTime.Today.DayOfWeek == DayOfWeek.Sunday ? 6 : DateTime.Today.DayOfWeek - DayOfWeek.Monday));
+    private DateTime StartOfWeek => DateTime.Today.AddDays(-(DateTime.Today.DayOfWeek == DayOfWeek.Sunday ? 6 : DateTime.Today.DayOfWeek - DayOfWeek.Monday));
 
     private IEnumerable<TrainingSession> GetSessionsForDay(DateTime date)
     {
-        bool isPersonal = activeFlow == "PERSONAL";
+        bool isPersonal = _activeFlow == "PERSONAL";
         return Controller.Sessions
             .Where(s => s.IsPersonal == isPersonal && s.StartTime.Date == date.Date && s.StartTime.Hour >= 8 && s.StartTime.Hour <= 20)
             .OrderBy(s => s.StartTime);
@@ -295,7 +295,7 @@
 
     private IPriceStrategy GetStrategy()
     {
-        return discountType switch
+        return _discountType switch
         {
             "Student" => new StudentDiscountStrategy(),
             "Senior" => new SeniorDiscountStrategy(),
@@ -306,8 +306,8 @@
     private decimal GetCurrentPrice()
     {
         var builder = new OpenTicketBuilder(Session.Nickname);
-        if (addSauna) builder.AddSauna();
-        if (addPool) builder.AddPool();
+        if (_addSauna) builder.AddSauna();
+        if (_addPool) builder.AddPool();
         builder.ApplyDiscount(GetStrategy());
         
         return builder.Build().PricePaid;
@@ -317,15 +317,15 @@
     {
         var builder = new OpenTicketBuilder(Session.Nickname);
         
-        if (addSauna) builder.AddSauna();
-        if (addPool) builder.AddPool();
+        if (_addSauna) builder.AddSauna();
+        if (_addPool) builder.AddPool();
         
         builder.ApplyDiscount(GetStrategy());
         
-        currentTicket = builder.Build();
+        _currentTicket = builder.Build();
 
-        Controller.AddTicket(currentTicket);
-        activeFlow = "";
+        Controller.AddTicket(_currentTicket);
+        _activeFlow = "";
     }
 
     private void BookSession(TrainingSession session)
@@ -334,7 +334,7 @@
 
         Controller.BookSession(session.Id, Session.Nickname);
     
-        currentTicket = new TicketData
+        _currentTicket = new TicketData
         {
             ServiceName = session.IsPersonal ? "Trening Personalny" : "Zajęcia Grupowe",
             OwnerNickname = Session.Nickname,
@@ -344,19 +344,19 @@
             RelatedSessionId = session.Id
         };
         
-        Controller.AddTicket(currentTicket); 
-        activeFlow = "";
+        Controller.AddTicket(_currentTicket); 
+        _activeFlow = "";
     }
 
     private void ResetView()
     {
-        activeFlow = "";
-        currentTicket = null;
-        addSauna = false;
-        addPool = false;
-        discountType = "Brak";
+        _activeFlow = "";
+        _currentTicket = null;
+        _addSauna = false;
+        _addPool = false;
+        _discountType = "Brak";
     }
     
-    private int GetTopOffset(DateTime st) => (int)((st.Hour - 8) * 60 + st.Minute);
+    private int GetTopOffset(DateTime st) => (st.Hour - 8) * 60 + st.Minute;
     private int GetHeight(int dur) => dur;
 }

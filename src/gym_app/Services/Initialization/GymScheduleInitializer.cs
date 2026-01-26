@@ -1,6 +1,7 @@
 namespace gym_app.Services.Initialization;
 
-using gym_app.Models;
+using Models;
+using Sessions;
 
 public static class GymScheduleInitializer
 {

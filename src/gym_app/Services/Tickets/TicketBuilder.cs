@@ -1,27 +1,29 @@
 using gym_app.Models;
+using gym_app.Abstractions;
+using gym_app.Services.Pricing;
 
-namespace gym_app.Services;
+namespace gym_app.Services.Tickets;
 
 
 public static class TicketPricing
 {
-    public const decimal BASE_PRICE = 20m;
-    public const decimal SAUNA_ADDON = 10m;
-    public const decimal POOL_ADDON = 15m;
+    public const decimal BasePrice = 20m;
+    public const decimal SaunaAddon = 10m;
+    public const decimal PoolAddon = 15m;
 }
 
 public class OpenTicketBuilder
 {
-    private TicketData _ticket;
-    private decimal _price = TicketPricing.BASE_PRICE;
-    private List<string> _features = [];
+    private readonly TicketData _ticket;
+    private decimal _price = TicketPricing.BasePrice;
+    private readonly List<string> _features = [];
 
     public OpenTicketBuilder(string ownerNickname)
     {
         _ticket = new TicketData
         {
             TicketId = Guid.NewGuid().ToString(),
-            OwnerNickname = ownerNickname ?? "Gość",
+            OwnerNickname = ownerNickname,
             ValidDate = DateTime.Now,
             ServiceName = "Wejście OPEN"
         };
@@ -31,14 +33,14 @@ public class OpenTicketBuilder
     public OpenTicketBuilder AddSauna()
     {
         _features.Add("Sauna");
-        _price += TicketPricing.SAUNA_ADDON;
+        _price += TicketPricing.SaunaAddon;
         return this;
     }
 
     public OpenTicketBuilder AddPool()
     {
         _features.Add("Basen");
-        _price += TicketPricing.POOL_ADDON;
+        _price += TicketPricing.PoolAddon;
         return this;
     }
 

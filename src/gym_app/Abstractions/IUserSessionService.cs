@@ -1,6 +1,7 @@
-using gym_app.Models;
-
 namespace gym_app.Abstractions;
+
+using Models;
+
 
 public interface IUserSessionService
 {

@@ -115,7 +115,6 @@ public class GymSystemController
             var session = Sessions.FirstOrDefault(s => s.Id == ticket.RelatedSessionId);
             if (session != null)
             {
-                string trainerName = session.InstructorName.Split(' ')[0];
                 NotifyObservers($"Nowy bilet dla {ticket.OwnerNickname}: {ticket.ServiceName}");
             }
         }

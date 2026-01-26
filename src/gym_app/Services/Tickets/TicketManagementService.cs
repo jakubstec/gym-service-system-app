@@ -1,7 +1,7 @@
 namespace gym_app.Services.Tickets;
 
-using gym_app.Abstractions;
-using gym_app.Models;
+using Abstractions;
+using Models;
 
 public class TicketManagementService : ITicketManagementService
 {

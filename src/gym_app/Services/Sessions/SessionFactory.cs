@@ -1,6 +1,6 @@
 using gym_app.Models;
 
-namespace gym_app.Services;
+namespace gym_app.Services.Sessions;
 
 public static class SessionFactory
 {

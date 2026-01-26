@@ -1,6 +1,6 @@
 namespace gym_app.Abstractions;
 
-using gym_app.Models;
+using Models;
 
 public interface ITicketManagementService
 {

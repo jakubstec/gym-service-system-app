@@ -1,7 +1,4 @@
-@using gym_app.Models
-@using gym_app.Services
 @using System.Globalization
-@using gym_app.Controllers
 @inject GymSystemController Controller
 @inject IUserSessionService Session
 @implements IDisposable
@@ -58,24 +55,24 @@
     <div class="row g-4">
         <div class="col-lg-3">
             <div class="card border-0 shadow-sm p-4 sticky-top" style="top: 20px; border-radius: 24px; background: #fff;">
-                <h5 class="fw-bold mb-4">@(isEditing ? "Edytuj Zajęcia" : "Nowe Zajęcia")</h5>
+                <h5 class="fw-bold mb-4">@(_isEditing ? "Edytuj Zajęcia" : "Nowe Zajęcia")</h5>
                 
                 <div class="mb-2">
                     <label class="small fw-bold text-muted mb-1 text-uppercase" style="font-size: 0.6rem;">Nazwa zajęć</label>
-                    <input class="form-control form-control-sm rounded-3" @bind="formSession.Name" placeholder="np. Zumba" />
+                    <input class="form-control form-control-sm rounded-3" @bind="_formSession.Name" placeholder="np. Zumba" />
                 </div>
                 <div class="mb-2">
                     <label class="small fw-bold text-muted mb-1 text-uppercase" style="font-size: 0.6rem;">Prowadzący</label>
-                    <input class="form-control form-control-sm rounded-3" @bind="formSession.InstructorName" />
+                    <input class="form-control form-control-sm rounded-3" @bind="_formSession.InstructorName" />
                 </div>
                 <div class="mb-2">
                     <label class="small fw-bold text-muted mb-1 text-uppercase" style="font-size: 0.6rem;">Data i godzina startu</label>
-                    <input class="form-control form-control-sm rounded-3" type="datetime-local" @bind="formSession.StartTime" />
+                    <input class="form-control form-control-sm rounded-3" type="datetime-local" @bind="_formSession.StartTime" />
                 </div>
                 
                 <div class="mb-3">
                     <label class="small fw-bold text-muted mb-1 text-uppercase" style="font-size: 0.6rem;">Typ</label>
-                    <select class="form-select form-select-sm rounded-3" @bind="sessionType">
+                    <select class="form-select form-select-sm rounded-3" @bind="_sessionType">
                         <option value="Group">Grupowe</option>
                         <option value="Personal">Personalne</option>
                     </select>
@@ -86,8 +83,8 @@
                     <div class="d-flex gap-1">
                         @foreach (var dur in new[] { 30, 60, 90, 120 })
                         {
-                            <button class="btn btn-xs flex-grow-1 @(formSession.DurationMinutes == dur ? "btn-dark" : "btn-outline-secondary")"
-                                    @onclick="() => formSession.DurationMinutes = dur" style="font-size: 0.65rem; padding: 2px;">
+                            <button class="btn btn-xs flex-grow-1 @(_formSession.DurationMinutes == dur ? "btn-dark" : "btn-outline-secondary")"
+                                    @onclick="() => _formSession.DurationMinutes = dur" style="font-size: 0.65rem; padding: 2px;">
                                 @dur'
                             </button>
                         }
@@ -96,9 +93,9 @@
 
                 <div class="d-flex gap-2">
                     <button class="btn btn-primary btn-sm w-100 rounded-pill fw-bold" @onclick="SaveSession">
-                        @(isEditing ? "Zapisz zmiany" : "Dodaj do grafiku")
+                        @(_isEditing ? "Zapisz zmiany" : "Dodaj do grafiku")
                     </button>
-                    @if(isEditing) {
+                    @if(_isEditing) {
                         <button class="btn btn-light btn-sm rounded-pill" @onclick="CancelEdit">✕</button>
                     }
                 </div>
@@ -109,8 +106,8 @@
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h3 class="fw-bold mb-0">Zarządzanie Grafikiem</h3>
                 <div class="btn-group p-1 bg-white rounded-pill shadow-sm border">
-                    <button class="btn btn-sm rounded-pill px-4 @(viewType == "Group" ? "btn-dark" : "btn-light")" @onclick='() => viewType = "Group"'>Grupowe</button>
-                    <button class="btn btn-sm rounded-pill px-4 @(viewType == "Personal" ? "btn-dark" : "btn-light")" @onclick='() => viewType = "Personal"'>Personalne</button>
+                    <button class="btn btn-sm rounded-pill px-4 @(_viewType == "Group" ? "btn-dark" : "btn-light")" @onclick='() => _viewType = "Group"'>Grupowe</button>
+                    <button class="btn btn-sm rounded-pill px-4 @(_viewType == "Personal" ? "btn-dark" : "btn-light")" @onclick='() => _viewType = "Personal"'>Personalne</button>
                 </div>
             </div>
 
@@ -126,7 +123,7 @@
                     {
                         var day = StartOfWeek.AddDays(i);
                         var sessions = Controller.Sessions
-                            .Where(x => (viewType == "Personal" ? x.IsPersonal : !x.IsPersonal) && x.StartTime.Date == day.Date && x.StartTime.Hour >= 8 && x.StartTime.Hour <= 20)
+                            .Where(x => (_viewType == "Personal" ? x.IsPersonal : !x.IsPersonal) && x.StartTime.Date == day.Date && x.StartTime.Hour >= 8 && x.StartTime.Hour <= 20)
                             .ToList();
 
                         <div class="day-column">
@@ -346,10 +343,10 @@
 </style>
 
 @code {
-    private TrainingSession formSession = new();
-    private string sessionType = "Group";
-    private string viewType = "Group";
-    private bool isEditing = false;
+    private TrainingSession _formSession = new();
+    private string _sessionType = "Group";
+    private string _viewType = "Group";
+    private bool _isEditing;
 
     protected override void OnInitialized()
     {
@@ -364,16 +361,16 @@
 
     private void SaveSession()
     {
-        if (string.IsNullOrWhiteSpace(formSession.Name)) return;
+        if (string.IsNullOrWhiteSpace(_formSession.Name)) return;
 
-        formSession.IsPersonal = sessionType == "Personal";
-        formSession.Price = formSession.IsPersonal ? 100 : 15;
-        formSession.MaxCapacity = formSession.IsPersonal ? 1 : 20;
+        _formSession.IsPersonal = _sessionType == "Personal";
+        _formSession.Price = _formSession.IsPersonal ? 100 : 15;
+        _formSession.MaxCapacity = _formSession.IsPersonal ? 1 : 20;
 
-        if (!isEditing)
+        if (!_isEditing)
         {
-            formSession.Id = Guid.NewGuid().ToString();
-            Controller.AddSession(formSession);
+            _formSession.Id = Guid.NewGuid().ToString();
+            Controller.AddSession(_formSession);
         }
 
         CancelEdit();
@@ -381,20 +378,20 @@
 
     private void EditSession(TrainingSession s)
     {
-        formSession = s;
-        sessionType = s.IsPersonal ? "Personal" : "Group";
-        isEditing = true;
+        _formSession = s;
+        _sessionType = s.IsPersonal ? "Personal" : "Group";
+        _isEditing = true;
     }
 
     private void CancelEdit()
     {
-        isEditing = false;
+        _isEditing = false;
         ResetForm();
     }
 
     private void ResetForm()
     {
-        formSession = new TrainingSession 
+        _formSession = new TrainingSession 
         { 
             StartTime = DateTime.Today.AddDays(1).AddHours(10), 
             InstructorName = Session.Nickname,
@@ -408,8 +405,8 @@
         Session.OnSessionChanged -= Refresh;
     }
 
-    private DateTime StartOfWeek => DateTime.Today.AddDays(-(int)(DateTime.Today.DayOfWeek == DayOfWeek.Sunday ? 6 : DateTime.Today.DayOfWeek - DayOfWeek.Monday));
+    private DateTime StartOfWeek => DateTime.Today.AddDays(-(DateTime.Today.DayOfWeek == DayOfWeek.Sunday ? 6 : DateTime.Today.DayOfWeek - DayOfWeek.Monday));
     
-    private int GetTopOffset(DateTime st) => (int)((st.Hour - 8) * 60 + st.Minute);
+    private int GetTopOffset(DateTime st) => (st.Hour - 8) * 60 + st.Minute;
     private int GetHeight(int dur) => dur;
 }
