@@ -9,7 +9,7 @@
 
 <div class="d-flex flex-column min-vh-100">
     <div class="flex-grow-1 container mt-4">
-        @if (!Session.IsLoggedIn) @* Sprawdzamy w Session, nie w Controller *@
+        @if (!Session.IsLoggedIn)
         {
             <LoginView />
         }
