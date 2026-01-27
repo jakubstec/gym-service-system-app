@@ -38,9 +38,10 @@ public static class GymScheduleInitializer
                     case 5:
                         sessions.Add(SessionFactory.CreateGroupClass("Stretching", "Ola", dayOffset, 9.0, 90));
                         sessions.Add(SessionFactory.CreateGroupClass("Zumba Party", "Kasia", dayOffset, 18.0, 120));
-                }
+                        break;
+            }
 
-                sessions.Add(SessionFactory.CreatePersonalTraining("Trening Personalny", "Piotr", dayOffset, 8.0));
+            sessions.Add(SessionFactory.CreatePersonalTraining("Trening Personalny", "Piotr", dayOffset, 8.0));
                 sessions.Add(SessionFactory.CreatePersonalTraining("Kulturystyka 1:1", "Ania", dayOffset, 13.0));
                 sessions.Add(SessionFactory.CreatePersonalTraining("Wsparcie Formy", "Michał", dayOffset, 15.0));
             }
